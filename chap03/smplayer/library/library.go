@@ -22,7 +22,7 @@ func (m *MusicManager) Len() int {
 	return len(m.musics)
 }
 
-func (m *MusicManager) Get(index int) (music *Music, err error) {	
+func (m *MusicManager) Get(index int) (music *Music, err error) {
 	if index < 0 || index >= m.Len() {
 		err = errors.New("No such music")
 		return
@@ -53,7 +53,7 @@ func (m *MusicManager) Del(index int) *Music {
 
 	music := &m.musics[index]
 
-	m.musics = append(m.musics[:index], m.musics[index+1:])
+	m.musics = append(m.musics[:index], m.musics[index+1:]...)
 
 	return music
 }
