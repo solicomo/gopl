@@ -6,8 +6,8 @@ type Music struct {
 	Id     string
 	Name   string
 	Artist string
-	Source string
 	Type   string
+	Source string
 }
 
 type MusicManager struct {
@@ -46,16 +46,17 @@ func (m *MusicManager) Add(music *Music) {
 	m.musics = append(m.musics, *music)
 }
 
-func (m *MusicManager) Del(index int) *Music {
+func (m *MusicManager) Del(index int) (music Music, err error) {
 	if index < 0 || index >= m.Len() {
-		return nil
+		err = errors.New("No such music")
+		return
 	}
 
-	music := &m.musics[index]
+	music = m.musics[index]
 
 	m.musics = append(m.musics[:index], m.musics[index+1:]...)
 
-	return music
+	return
 }
 
 
