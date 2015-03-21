@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -66,13 +67,50 @@ func handleView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	image := UPLOAD_DIR + id
+	if exists := isExists(image); !exists {
+		http.NotFound(w, r)
+		return
+	}
+
 	w.Header().Set("Content-Type", "image")
 
 	http.ServeFile(w, r, image)
 }
 
+func isExists(path string) bool {
+	_, err := os.Stat(path)
+
+	if err == nil {
+		return true
+	}
+
+	return !os.IsNotExist(err)
+}
+
+func handleIndex(w http.ResponseWriter, r *http.Request) {
+	fis, err := ioutil.ReadDir(UPLOAD_DIR)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	html := `<html><head><title>Index</title></head><body><a href="/upload">Upload</a><br /><ol>`
+	for _, fi := range fis {
+		if fi.IsDir() {
+			continue
+		}
+
+		id := fi.Name()
+		html += `<li><a href="/view?id=` + id + `">` + id + "</a></li>"
+	}
+
+	html += "</ol></body></html>"
+
+	io.WriteString(w, html)
+}
 
 func main() {
+	http.HandleFunc("/", handleIndex)
 	http.HandleFunc("/upload", handleUpload)
 	http.HandleFunc("/view", handleView)
 	err := http.ListenAndServe(":8080", nil)
