@@ -9,8 +9,41 @@ import (
 )
 
 const (
-	UPLOAD_DIR = "./uploads/"
+	UPLOAD_DIR = "./upload/"
+	STATIC_DIR = "./static/"
+	TEMPLATE_DIR = "./tpl/"
 )
+
+func loadTpls(dir, ext string) (tpl *template.Template, err error) {
+	fis, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return
+	}
+
+	for _, fi := range fis {
+		name := fi.Name()
+
+		if fi.IsDir() {
+			subTpls, er := loadTpls(dir + "/" + name, ext)
+			if er != nil {
+				err = er
+				return
+			}
+
+			for t := range subTpls.Templates() {
+				tpls[name + "/" + ] = t
+			}
+
+			continue
+		}
+
+		if ex := path.Ext(name); ex != ext {
+			continue
+		}
+
+
+	}
+}
 
 func handleUpload(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
@@ -119,3 +152,4 @@ func main() {
 		log.Fatal(err)
 	}
 }
+
