@@ -14,26 +14,35 @@ const (
 	TEMPLATE_DIR = "./tpl/"
 )
 
-func loadTpls(dir, ext string) (tpl *template.Template, err error) {
+func loadTpls(dir, ext string, tpl *template.Template) (err error) {
+	if tpl == nil {
+		err = errors.New("invalid template")
+		return
+	}
+
+	pName := tpl.Name()
+
+	if len(pName) > 0 && pName[len(pName)-1] != '/' {
+		pName = pName + "/"
+	}
+
 	fis, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return
 	}
 
 	for _, fi := range fis {
-		name := fi.Name()
+		cName := pName + fi.Name()
+		ct := tpl.New(cName)
 
 		if fi.IsDir() {
-			subTpls, er := loadTpls(dir + "/" + name, ext)
+			er := loadTpls(dir + "/" + name, ext, ct)
 			if er != nil {
 				err = er
 				return
 			}
 
-			for t := range subTpls.Templates() {
-				tpls[name + "/" + ] = t
-			}
-
+			//TODO:
 			continue
 		}
 
@@ -41,7 +50,11 @@ func loadTpls(dir, ext string) (tpl *template.Template, err error) {
 			continue
 		}
 
-
+		ct, er := ct.ParseFiles(cName)
+		if er != nil {
+			err = er
+			return
+		}
 	}
 }
 
