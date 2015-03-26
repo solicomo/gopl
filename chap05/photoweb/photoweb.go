@@ -14,17 +14,24 @@ const (
 	TEMPLATE_DIR = "./tpl/"
 )
 
-func loadTpls(dir, ext string, tpl *template.Template) (err error) {
+func LoadTemplates(dir, ext string) (tpl *template.Template, err error) {
+	tpl = template.New("/")
+
+	if len(dir) > 0 && dir[len(dir)-1] != '/' {
+		dir = dir + "/"
+	}
+
+	err = loadTemplates(dir, ext, tpl)
+	return
+}
+
+func loadTemplates(dir, ext string, tpl *template.Template) (err error) {
 	if tpl == nil {
-		err = errors.New("invalid template")
+		err = errors.New("create new template failed.")
 		return
 	}
 
 	pName := tpl.Name()
-
-	if len(pName) > 0 && pName[len(pName)-1] != '/' {
-		pName = pName + "/"
-	}
 
 	fis, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -32,17 +39,42 @@ func loadTpls(dir, ext string, tpl *template.Template) (err error) {
 	}
 
 	for _, fi := range fis {
-		cName := pName + fi.Name()
-		ct := tpl.New(cName)
-
 		if fi.IsDir() {
-			er := loadTpls(dir + "/" + name, ext, ct)
+			cName := pName + fi.Name() + "/"
+			ct := tpl.New(cName)
+
+			er := loadTemplates(dir + cName, ext, ct)
 			if er != nil {
 				err = er
 				return
 			}
 
-			//TODO:
+			for _, t := range ct.Templates() {
+				if t == ct {
+					continue
+				}
+
+				tName := t.Name()
+				if len(tName) <= 0 {
+					continue
+				}
+
+				if tName[len(tName)-1] == '/' {
+					continue
+				}
+
+				ccName := cName + t.Name()
+				fName  := dir + "/" + ccName + "." + ext
+
+				cct := tpl.New(ccName)
+				cct, er := cct.ParseFiles(fName)
+				
+				if er != nil {
+					err = er
+					return
+				}
+			}
+
 			continue
 		}
 
