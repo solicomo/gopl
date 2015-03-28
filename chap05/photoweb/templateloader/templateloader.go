@@ -4,21 +4,21 @@ import (
 	"errors"
 	"html/template"
 	"io/ioutil"
-	"path"
+	"path/filepath"
 )
 
-func LoadTemplates(dir, ext string) (tpl *template.Template, err error) {
+func LoadTemplates(dir, pattern string) (tpl *template.Template, err error) {
 	tpl = template.New("")
 
 	if len(dir) > 0 && dir[len(dir)-1] != '/' {
 		dir = dir + "/"
 	}
 
-	err = loadTemplates(dir, ext, tpl.Name(), tpl)
+	err = loadTemplates(dir, pattern, tpl.Name(), tpl)
 	return
 }
 
-func loadTemplates(dir, ext, pName string, tpl *template.Template) (err error) {
+func loadTemplates(dir, pattern, pName string, tpl *template.Template) (err error) {
 	if tpl == nil {
 		err = errors.New("create new template failed.")
 		return
@@ -38,7 +38,7 @@ func loadTemplates(dir, ext, pName string, tpl *template.Template) (err error) {
 		fName := dir + fi.Name()
 
 		if fi.IsDir() {
-			er := loadTemplates(fName + "/", ext, cName, tpl)
+			er := loadTemplates(fName+"/", pattern, cName, tpl)
 			if er != nil {
 				err = er
 				return
@@ -47,7 +47,13 @@ func loadTemplates(dir, ext, pName string, tpl *template.Template) (err error) {
 			continue
 		}
 
-		if ex := path.Ext(fName); ex != ext {
+		matched, er := filepath.Match(pattern, fi.Name())
+		if er != nil {
+			err = er
+			return
+		}
+
+		if !matched {
 			continue
 		}
 
@@ -60,7 +66,7 @@ func loadTemplates(dir, ext, pName string, tpl *template.Template) (err error) {
 		s := string(b)
 
 		cTpl := tpl.New(cName)
-		
+
 		cTpl, er = cTpl.Parse(s)
 		if er != nil {
 			err = er

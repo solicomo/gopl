@@ -8,7 +8,7 @@ import (
 
 const (
 	TPL_DIR = "./tpls"
-	TPL_EXT = ".tpl"
+	TPL_EXT = "*.tpl"
 )
 
 func dumpTemplates(tpls *template.Template) {
