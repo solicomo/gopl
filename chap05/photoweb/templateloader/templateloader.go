@@ -14,17 +14,16 @@ func LoadTemplates(dir, ext string) (tpl *template.Template, err error) {
 		dir = dir + "/"
 	}
 
-	err = loadTemplates(dir, ext, tpl)
+	err = loadTemplates(dir, ext, tpl.Name(), tpl)
 	return
 }
 
-func loadTemplates(dir, ext string, tpl *template.Template) (err error) {
+func loadTemplates(dir, ext, pName string, tpl *template.Template) (err error) {
 	if tpl == nil {
 		err = errors.New("create new template failed.")
 		return
 	}
 
-	pName := tpl.Name()
 	if len(pName) > 0 && dir[len(pName)-1] != '/' {
 		pName += "/"
 	}
@@ -39,8 +38,7 @@ func loadTemplates(dir, ext string, tpl *template.Template) (err error) {
 		fName := dir + fi.Name()
 
 		if fi.IsDir() {
-			cTpl  := tpl.New(cName)
-			er := loadTemplates(fName + "/", ext, cTpl)
+			er := loadTemplates(fName + "/", ext, cName, tpl)
 			if er != nil {
 				err = er
 				return
