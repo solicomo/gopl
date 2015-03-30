@@ -1,108 +1,27 @@
 package main
 
 import (
+	"fmt"
+	"gopl/chap05/photoweb/templateloader"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"html/template"
 )
 
 const (
-	UPLOAD_DIR = "./upload/"
-	STATIC_DIR = "./static/"
+	UPLOAD_DIR   = "./upload/"
+	STATIC_DIR   = "./static/"
 	TEMPLATE_DIR = "./tpl/"
 )
 
-func LoadTemplates(dir, ext string) (tpl *template.Template, err error) {
-	tpl = template.New("/")
-
-	if len(dir) > 0 && dir[len(dir)-1] != '/' {
-		dir = dir + "/"
-	}
-
-	err = loadTemplates(dir, ext, tpl)
-	return
-}
-
-func loadTemplates(dir, ext string, tpl *template.Template) (err error) {
-	if tpl == nil {
-		err = errors.New("create new template failed.")
-		return
-	}
-
-	pName := tpl.Name()
-
-	fis, err := ioutil.ReadDir(dir)
-	if err != nil {
-		return
-	}
-
-	for _, fi := range fis {
-		if fi.IsDir() {
-			cName := pName + fi.Name() + "/"
-			ct := tpl.New(cName)
-
-			er := loadTemplates(dir + cName, ext, ct)
-			if er != nil {
-				err = er
-				return
-			}
-
-			for _, t := range ct.Templates() {
-				if t == ct {
-					continue
-				}
-
-				tName := t.Name()
-				if len(tName) <= 0 {
-					continue
-				}
-
-				if tName[len(tName)-1] == '/' {
-					continue
-				}
-
-				ccName := cName + t.Name()
-				fName  := dir + "/" + ccName + "." + ext
-
-				cct := tpl.New(ccName)
-				cct, er := cct.ParseFiles(fName)
-				
-				if er != nil {
-					err = er
-					return
-				}
-			}
-
-			continue
-		}
-
-		if ex := path.Ext(name); ex != ext {
-			continue
-		}
-
-		ct, er := ct.ParseFiles(cName)
-		if er != nil {
-			err = er
-			return
-		}
-	}
-}
+var gTpls *template.Template = nil
 
 func handleUpload(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		io.WriteString(w, `
-		<html>
-		<head><title>Upload</title></head>
-		<body>
-		<form method="POST" action="/upload" enctype="multipart/form-data">
-		Choose an image to upload: <input name="image" type="file" />
-		<input type="submit" value="Upload" />
-		</form>
-		</body>
-		</html>`)
-
+		renderHtml(w, "upload.html", nil)
 		return
 	}
 
@@ -144,25 +63,7 @@ func handleView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	image := UPLOAD_DIR + id
-	if exists := isExists(image); !exists {
-		http.NotFound(w, r)
-		return
-	}
-
-	w.Header().Set("Content-Type", "image")
-
-	http.ServeFile(w, r, image)
-}
-
-func isExists(path string) bool {
-	_, err := os.Stat(path)
-
-	if err == nil {
-		return true
-	}
-
-	return !os.IsNotExist(err)
+	renderHtml(w, "view.html", id)
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -172,29 +73,41 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	html := `<html><head><title>Index</title></head><body><a href="/upload">Upload</a><br /><ol>`
+	images := []string{}
 	for _, fi := range fis {
 		if fi.IsDir() {
 			continue
 		}
 
-		id := fi.Name()
-		html += `<li><a href="/view?id=` + id + `">` + id + "</a></li>"
+		images = append(images, fi.Name())
 	}
 
-	html += "</ol></body></html>"
+	renderHtml(w, "upload.html", images)
+}
 
-	io.WriteString(w, html)
+func renderHtml(w http.ResponseWriter, tpl string, data interface{}) {
+	err := gTpls.ExecuteTemplate(w, tpl, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func main() {
+	var err error
+	gTpls, err = templateloader.LoadTemplates(TEMPLATE_DIR, "*.html")
+	if err != nil {
+		fmt.Println("load templates failed:", err)
+		return
+	}
+
 	http.HandleFunc("/", handleIndex)
 	http.HandleFunc("/upload", handleUpload)
 	http.HandleFunc("/view", handleView)
-	err := http.ListenAndServe(":8080", nil)
+	http.Handle("/upload/", http.StripPrefix("/upload/", http.FileServer(http.Dir(UPLOAD_DIR))))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
+	err = http.ListenAndServe(":8080", nil)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 }
-
