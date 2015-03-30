@@ -75,14 +75,14 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 
 	images := []string{}
 	for _, fi := range fis {
-		if fi.IsDir() {
+		if fi.IsDir() || fi.Name()[0] == '.' {
 			continue
 		}
 
 		images = append(images, fi.Name())
 	}
 
-	renderHtml(w, "upload.html", images)
+	renderHtml(w, "index.html", images)
 }
 
 func renderHtml(w http.ResponseWriter, tpl string, data interface{}) {

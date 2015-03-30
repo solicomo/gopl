@@ -8,7 +8,7 @@
 	<body>
 		<div id="index">
 			<ol>
-				{{range .images}}
+				{{range .}}
 				<li><a href="/view?id={{.|urlquery}}">{{.|html}}</a></li>
 				{{end}}
 			</ol>
