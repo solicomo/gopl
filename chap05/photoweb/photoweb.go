@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	UPLOAD_DIR   = "./upload/"
-	STATIC_DIR   = "./static/"
+	PUBLIC_DIR   = "./public/"
+	UPLOAD_DIR   = "./public/upload/"
+	STATIC_DIR   = "./public/static/"
 	TEMPLATE_DIR = "./tpl/"
 )
 
@@ -112,8 +113,8 @@ func main() {
 	http.HandleFunc("/", safeHandler(handleIndex))
 	http.HandleFunc("/upload", safeHandler(handleUpload))
 	http.HandleFunc("/view", safeHandler(handleView))
-	http.Handle("/upload/", http.StripPrefix("/upload/", http.FileServer(http.Dir(UPLOAD_DIR))))
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
+	http.Handle("/upload/", http.FileServer(http.Dir(PUBLIC_DIR)))
+	http.Handle("/static/", http.FileServer(http.Dir(PUBLIC_DIR)))
 	err = http.ListenAndServe(":8080", nil)
 
 	if err != nil {
