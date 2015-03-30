@@ -6,11 +6,13 @@
 		<link rel="stylesheet" type="text/css" href="static/css/style.css" />
 	</head>
 	<body>
+		{{template "nav.html" .}}
 		<div id="index">
 			<ol>
 				{{range .}}
 				<li><a href="/view?id={{.|urlquery}}">{{.|html}}</a></li>
 				{{end}}
 			</ol>
+		</div>
 	</body>
 </html>

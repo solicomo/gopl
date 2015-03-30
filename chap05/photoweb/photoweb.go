@@ -36,17 +36,12 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		defer f.Close()
 
 		t, err := os.Create(UPLOAD_DIR + filename)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		check(err)
 
 		defer t.Close()
 
-		if _, err := io.Copy(t, f); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		_, err = io.Copy(t, f)
+		check(err)
 
 		http.Redirect(w, r, "/view?id="+filename, http.StatusFound)
 
@@ -68,10 +63,7 @@ func handleView(w http.ResponseWriter, r *http.Request) {
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	fis, err := ioutil.ReadDir(UPLOAD_DIR)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	check(err)
 
 	images := []string{}
 	for _, fi := range fis {
@@ -86,9 +78,26 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func renderHtml(w http.ResponseWriter, tpl string, data interface{}) {
-	err := gTpls.ExecuteTemplate(w, tpl, data)
+	check(gTpls.ExecuteTemplate(w, tpl, data))
+}
+
+func check(err error) {
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		panic(err)
+	}
+}
+
+func safeHandler(fn http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err, ok := recover().(error); ok {
+				//http.Error(w, err.Error(), http.StatusInternalServerError)
+				w.WriteHeader(http.StatusInternalServerError)
+				renderHtml(w, "50x.html", err)
+			}
+		}()
+
+		fn(w, r)
 	}
 }
 
@@ -100,9 +109,9 @@ func main() {
 		return
 	}
 
-	http.HandleFunc("/", handleIndex)
-	http.HandleFunc("/upload", handleUpload)
-	http.HandleFunc("/view", handleView)
+	http.HandleFunc("/", safeHandler(handleIndex))
+	http.HandleFunc("/upload", safeHandler(handleUpload))
+	http.HandleFunc("/view", safeHandler(handleView))
 	http.Handle("/upload/", http.StripPrefix("/upload/", http.FileServer(http.Dir(UPLOAD_DIR))))
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(STATIC_DIR))))
 	err = http.ListenAndServe(":8080", nil)

@@ -6,6 +6,7 @@
 		<link rel="stylesheet" type="text/css" href="static/css/style.css" />
 	</head>
 	<body>
+		{{template "nav.html" .}}
 		<div id="upload">
 			<form method="POST" action="/upload" enctype="multipart/form-data">
 				Choose an image to upload: <input name="image" type="file" />
