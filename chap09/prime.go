@@ -39,15 +39,16 @@ func main() {
 
 	if len(os.Args) > 1 {
 		g, err := strconv.Atoi(os.Args[1])
-		if err != nil {
+		if err == nil {
 			goal = g
 		}
 	}
 
-	chs := make([]chan int, goal)
+	chs := make([]chan int, goal+1)
 
-	for _, ch := range chs {
-		go prime(ch)
+	for i, _ := range chs {
+		chs[i] = make(chan int)
+		go primeTest(chs[i])
 	}
 
 	for i, ch := range chs {
