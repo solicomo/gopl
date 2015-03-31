@@ -28,10 +28,10 @@ func primeTest(v chan int) {
 	x := <-v
 
 	if isPrime(x) {
-		v <- 1
-	} else {
-		v <- 0
+		fmt.Printf("%v ", x)
 	}
+
+	v <- 0
 }
 
 func main() {
@@ -55,11 +55,8 @@ func main() {
 		ch <- i
 	}
 
-	for i, ch := range chs {
-		b := <-ch
-		if b == 1 {
-			fmt.Printf("%v ", i)
-		}
+	for _, ch := range chs {
+		<-ch
 	}
 
 	fmt.Println()
