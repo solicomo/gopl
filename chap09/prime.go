@@ -24,14 +24,14 @@ func isPrime(x int) bool {
 	return true
 }
 
-func primeTest(v chan int) {
+func primeTest(v <-chan int, o chan<- int) {
 	x := <-v
 
 	if isPrime(x) {
 		fmt.Printf("%v ", x)
 	}
 
-	v <- 0
+	o <- 0
 }
 
 func main() {
@@ -44,19 +44,19 @@ func main() {
 		}
 	}
 
-	chs := make([]chan int, goal+1)
+	ich := make(chan int, goal+1)
+	och := make(chan int, goal+1)
 
-	for i, _ := range chs {
-		chs[i] = make(chan int)
-		go primeTest(chs[i])
+	for i := 1; i <= goal; i++ {
+		go primeTest(ich, och)
 	}
 
-	for i, ch := range chs {
-		ch <- i
+	for i := 1; i <= goal; i++ {
+		ich <- i
 	}
 
-	for _, ch := range chs {
-		<-ch
+	for i := 1; i <= goal; i++ {
+		<-och
 	}
 
 	fmt.Println()
