@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"gopl/chap05/photoweb/templateloader"
+	"./templateloader"
+	//"gopl/chap05/photoweb/templateloader"
 	"io"
 	"io/ioutil"
 	"log"
